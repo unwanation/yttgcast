@@ -1,0 +1,5 @@
+data/
+.env
+*.md
+.git/
+.DS_Store

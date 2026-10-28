@@ -1,0 +1,37 @@
+# yttgcast -- watches a YouTube channel, extracts the audio of new uploads, sends it to
+# Telegram Saved Messages and pins it as profile music (account.saveMusic, MTProto user API).
+#   docker compose up -d --build | docker compose logs -f daemon
+#   one-time login:  docker compose run --rm auth
+# Outbound only (YouTube + Telegram); no HTTP endpoint, no proxy label, no public ports.
+# Persistent state lives in ./data (session.json, state.json, heartbeat, tmp/).
+services:
+  daemon:
+    build: .
+    image: yttgcast:latest
+    container_name: yttgcast
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./data:/data
+    tmpfs:
+      - /tmp:size=64m
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  # One-time interactive login; not started by `docker compose up` (profile):
+  #   docker compose run --rm auth
+  auth:
+    image: yttgcast:latest
+    build: .
+    profiles: [auth]
+    env_file: .env
+    volumes:
+      - ./data:/data
+    stdin_open: true
+    tty: true
+    entrypoint: ["yttgcast-auth"]
